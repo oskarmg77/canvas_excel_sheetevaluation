@@ -1,0 +1,20 @@
+# Bibliotecas base
+openpyxl==3.1.2        # Lectura/escritura avanzada de archivos .xlsx
+python-dotenv==1.0.0   # Manejo de variables de entorno para credenciales
+
+# API Canvas LMS
+canvasapi==3.2.0       # Cliente Python oficial para Canvas API
+requests==2.32.4       # Peticiones HTTP para APIs
+
+# Google Sheets API
+google-api-python-client==2.104.0         # Cliente base de Google APIs
+google-auth-oauthlib==1.1.0               # Autenticación OAuth2
+google-auth-httplib2==0.2.0               # Soporte HTTP para autenticación
+gspread==6.0.2                            # API wrapper simplificado para Sheets
+
+# Interfaz gráfica
+tk==0.1.0                # Paquete base de Tkinter
+
+# Utilidades adicionales
+python-dateutil==2.8.2   # Manejo de fechas para sincronizaciones
+pandas==2.2.3
