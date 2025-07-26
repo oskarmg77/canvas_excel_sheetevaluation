@@ -8,13 +8,9 @@ def main():
     Función principal que configura el logging e inicia la interfaz gráfica.
     """
     try:
-        # 1. Configurar el sistema de registro de actividad
         setup_logging()
-
-        # 2. Crear una instancia de la aplicación principal y ejecutarla
         app = gui.MainApp()
         app.mainloop()
-
     except Exception as e:
         logging.critical("Ha ocurrido un error fatal al iniciar la aplicación.", exc_info=True)
         try:

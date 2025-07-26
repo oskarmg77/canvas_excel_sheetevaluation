@@ -14,10 +14,6 @@ from . import matcher
 
 
 def _write_grades_to_excel(file_path: str, workbook_read_only, grades_to_write: list) -> dict:
-    """
-    Motor de escritura para archivos Excel. Recibe un libro ya abierto en modo
-    data_only para buscar, y luego abre el archivo para escribir.
-    """
     logging.info(f"Iniciando proceso de escritura para Excel: {file_path}")
 
     try:
@@ -59,7 +55,7 @@ def _write_grades_to_excel(file_path: str, workbook_read_only, grades_to_write: 
 
     if updates_to_perform:
         logging.info(f"Escribiendo {len(updates_to_perform)} notas en el archivo Excel...")
-        workbook_write = openpyxl.load_workbook(file_path)  # Abrir para escribir
+        workbook_write = openpyxl.load_workbook(file_path)
         sheet_write = workbook_write['EVALUACIÓN']
         for cell, grade in updates_to_perform.items():
             sheet_write[cell].value = grade
@@ -78,7 +74,7 @@ def _write_grades_to_excel(file_path: str, workbook_read_only, grades_to_write: 
 
 def _write_grades_to_gsheet(spreadsheet_id: str, grades_to_write: list) -> dict:
     logging.info(f"Iniciando proceso de escritura para Google Sheet ID: {spreadsheet_id}")
-    sheet_data = clients.get_gsheet_values(spreadsheet_id, "EVALUACIÓN!A1:Z50")
+    sheet_data = clients.get_gsheet_values(spreadsheet_id, "EVALUACIÓN!A1:AZ100")
     written_count = 0
     not_found_students = []
 
@@ -122,34 +118,23 @@ def run_grade_processing(dest_config: dict) -> dict:
         raise FileNotFoundError("El archivo 'canvas_grades_to_write.json' no existe.")
 
     if dest_config['type'] == 'excel':
-        # --- CORRECCIÓN CLAVE ---
-        # Abrimos el libro UNA SOLA VEZ con data_only=True
         workbook = openpyxl.load_workbook(dest_config['path'], data_only=True)
         trimester_map = mapping.build_map_from_excel(workbook)
-
-        trimestre_info = next((t for t in trimester_map if t['trimestre_name'] == dest_config['trimestre']), None)
-        target_column = trimestre_info['tasks'].get(dest_config['tarea']) if trimestre_info else None
-        if not target_column:
-            raise ValueError(f"No se pudo encontrar la columna para la tarea '{dest_config['tarea']}'.")
-
-        for record in grades_to_write:
-            record['target_col'] = target_column
-
-        # Pasamos el libro ya abierto a la función de escritura
-        result = _write_grades_to_excel(dest_config['path'], workbook, grades_to_write)
-        workbook.close()
-        return result
-
-    else:  # sheets
+    else:
         sheet_data = clients.get_gsheet_values(dest_config['id'], "EVALUACIÓN")
         trimester_map = mapping.build_map_from_gsheet_data(sheet_data)
 
-        trimestre_info = next((t for t in trimester_map if t['trimestre_name'] == dest_config['trimestre']), None)
-        target_column = trimestre_info['tasks'].get(dest_config['tarea']) if trimestre_info else None
-        if not target_column:
-            raise ValueError(f"No se pudo encontrar la columna para la tarea '{dest_config['tarea']}'.")
+    trimestre_info = next((t for t in trimester_map if t['trimestre_name'] == dest_config['trimestre']), None)
+    target_column = trimestre_info['tasks'].get(dest_config['tarea']) if trimestre_info else None
+    if not target_column:
+        raise ValueError(f"No se pudo encontrar la columna para la tarea '{dest_config['tarea']}'.")
 
-        for record in grades_to_write:
-            record['target_col'] = target_column
+    for record in grades_to_write:
+        record['target_col'] = target_column
 
+    if dest_config['type'] == 'excel':
+        result = _write_grades_to_excel(dest_config['path'], workbook, grades_to_write)
+        workbook.close()
+        return result
+    else:
         return _write_grades_to_gsheet(dest_config['id'], grades_to_write)

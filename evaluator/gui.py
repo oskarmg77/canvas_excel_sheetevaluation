@@ -5,7 +5,6 @@ from tkinter import ttk, filedialog, messagebox
 import pandas as pd
 import openpyxl
 import re
-import unicodedata
 import json
 import os
 import shutil
@@ -103,13 +102,14 @@ class MainApp(tk.Tk):
         else:
             self.excel_controls_frame.pack_forget()
             self.sheets_controls_frame.pack(fill="x")
+        self._check_if_ready_to_write()
 
     def _load_canvas_courses(self):
         try:
             self.cursos_canvas_dict = clients.obtener_cursos()
             self.combo_canvas_cursos['values'] = list(self.cursos_canvas_dict.keys())
             self.combo_canvas_cursos.config(state="readonly")
-            messagebox.showinfo("Éxito", f"Se cargaron {len(self.cursos_canvas_dict)} cursos de Canvas.")
+            messagebox.showinfo("Éxito", f"Se cargaron {len(self.cursos_canvas_dict)} cursos.")
         except Exception as e:
             messagebox.showerror("Error de Conexión", f"No se pudo conectar a Canvas: {e}")
 
@@ -123,9 +123,9 @@ class MainApp(tk.Tk):
             self.combo_canvas_tareas['values'] = list(self.tareas_canvas_dict.keys())
             self.combo_canvas_tareas.config(state="readonly")
             messagebox.showinfo("Curso Seleccionado",
-                                f"Se han cargado {len(self.df_alumnos_del_curso)} alumnos y {len(self.tareas_canvas_dict)} tareas. Selecciona una tarea.")
+                                f"Se cargaron {len(self.df_alumnos_del_curso)} alumnos y {len(self.tareas_canvas_dict)} tareas. Selecciona una tarea.")
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudieron cargar los datos del curso: {e}")
+            messagebox.showerror("Error", f"No se pudieron cargar datos del curso: {e}")
 
     def _on_canvas_task_selected(self, event=None):
         nombre_curso = self.combo_canvas_cursos.get()
@@ -194,21 +194,17 @@ class MainApp(tk.Tk):
             self.combo_trimestre.config(state="readonly");
             self.combo_trimestre.set(trimestre_names[0])
         self._on_trimestre_selected()
-        self._check_if_ready_to_write()
 
     def _on_trimestre_selected(self, event=None):
         trimestre_str = self.combo_trimestre.get()
         if not trimestre_str: return
-        logging.info(f"Usuario ha seleccionado el trimestre: '{trimestre_str}'")
         trimestre_info = next((t for t in self.trimester_data_map if t['trimestre_name'] == trimestre_str), None)
         if trimestre_info and trimestre_info['tasks']:
             task_names = sorted(list(trimestre_info['tasks'].keys()))
-            logging.info(f"Tareas encontradas para este trimestre: {task_names}")
             self.combo_excel_tareas['values'] = task_names
             self.combo_excel_tareas.set(task_names[0])
             self.combo_excel_tareas.config(state="readonly")
         else:
-            logging.warning(f"No se encontraron tareas para el trimestre '{trimestre_str}'.")
             self.combo_excel_tareas.set('')
             self.combo_excel_tareas.config(state="disabled")
         self._check_if_ready_to_write()

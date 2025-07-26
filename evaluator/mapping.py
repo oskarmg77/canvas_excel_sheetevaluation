@@ -6,7 +6,6 @@ import logging
 
 
 def _build_map_logic(sheet, header_ranges, activity_row):
-    # ... (el resto de la función no cambia)
     pattern = re.compile(r"(TAREA|ACTIVIDAD)\s*(\d+)", re.IGNORECASE)
     trimester_map = []
     trimestre_labels = ["1er Trimestre", "2do Trimestre", "3er Trimestre"]
@@ -35,7 +34,6 @@ def _build_map_logic(sheet, header_ranges, activity_row):
     if not trimester_map:
         raise ValueError("No se encontraron actividades con el formato 'TAREA X' en ningún trimestre.")
 
-    # --- LOGGING AÑADIDO ---
     logging.info(f"Mapa de actividades construido con éxito: {trimester_map}")
     return trimester_map
 
