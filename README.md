@@ -1,10 +1,4 @@
-Este archivo explica qué hace el proyecto, cómo configurarlo y su estado actual.
 
-**Instrucciones:**
-1.  En la raíz de tu proyecto, crea un archivo llamado `README.md`.
-2.  Copia y pega el siguiente texto en ese archivo.
-
-```markdown
 # Evaluador Canvas-Excel/Sheets
 
 Este proyecto es una aplicación de escritorio con interfaz gráfica (GUI) desarrollada en Python y Tkinter, diseñada para automatizar el proceso de transferencia de calificaciones desde la plataforma de e-learning **Canvas LMS** a hojas de cálculo de evaluación, ya sean archivos de **Excel locales** o documentos de **Google Sheets** en la nube.
