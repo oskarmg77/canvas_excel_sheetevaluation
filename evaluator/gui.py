@@ -84,6 +84,7 @@ class MainApp(tk.Tk):
         ttk.Label(action_frame, text="Trimestre de Destino:").pack(anchor="w")
         self.combo_trimestre = ttk.Combobox(action_frame, state="disabled", exportselection=False);
         self.combo_trimestre.pack(fill="x", pady=2)
+        self.combo_trimestre.bind("<<ComboboxSelected>>", self._on_trimestre_selected)
         ttk.Label(action_frame, text="Tarea de Destino:").pack(anchor="w")
         self.combo_excel_tareas = ttk.Combobox(action_frame, state="disabled", exportselection=False);
         self.combo_excel_tareas.pack(fill="x", pady=2)
@@ -130,10 +131,8 @@ class MainApp(tk.Tk):
         nombre_curso = self.combo_canvas_cursos.get()
         nombre_tarea = self.combo_canvas_tareas.get()
         if not all([nombre_curso, nombre_tarea, self.df_alumnos_del_curso is not None]): return
-
         curso_id = self.cursos_canvas_dict[nombre_curso]
         tarea_id = self.tareas_canvas_dict[nombre_tarea]
-
         try:
             df_calificaciones = clients.obtener_calificaciones(curso_id, tarea_id)
             df_alumnos_renamed = self.df_alumnos_del_curso.rename(columns={'id': 'user_id'})
@@ -147,11 +146,9 @@ class MainApp(tk.Tk):
                     return score
 
             df_final['score'] = df_final['score'].apply(round_score)
-
             df_final.to_json("canvas_grades_to_write.json", orient='records', indent=4, force_ascii=False)
             logging.info(f"Guardadas {len(df_final)} notas en 'canvas_grades_to_write.json'.")
-            messagebox.showinfo("Notas de Canvas Guardadas",
-                                f"Se han extraído y guardado {len(df_final)} notas para la tarea seleccionada.")
+            messagebox.showinfo("Notas de Canvas Guardadas", f"Se han extraído y guardado {len(df_final)} notas.")
             self._check_if_ready_to_write()
         except Exception as e:
             messagebox.showerror("Error", f"No se pudieron obtener las calificaciones: {e}")
@@ -168,7 +165,7 @@ class MainApp(tk.Tk):
             workbook = openpyxl.load_workbook(path, data_only=True)
             self.trimester_data_map = mapping.build_map_from_excel(workbook)
             self._update_dest_combos()
-            messagebox.showinfo("Excel Cargado", "Archivo Excel cargado y mapeado correctamente.")
+            messagebox.showinfo("Excel Cargado", "Archivo Excel cargado y mapeado.")
         except Exception as e:
             messagebox.showerror("Error al leer Excel", f"No se pudo procesar el archivo Excel:\n{e}")
 
@@ -177,13 +174,12 @@ class MainApp(tk.Tk):
         if not url: messagebox.showwarning("URL Vacía", "Por favor, pega la URL."); return
         spreadsheet_id = self._get_spreadsheet_id_from_url(url)
         if not spreadsheet_id: messagebox.showerror("URL Inválida", "La URL no parece ser válida."); return
-
         self.spreadsheet_id = spreadsheet_id
         try:
-            sheet_data = clients.get_gsheet_values(self.spreadsheet_id, "EVALUACIÓN!A1:Z50")
+            sheet_data = clients.get_gsheet_values(self.spreadsheet_id, "EVALUACIÓN")
             self.trimester_data_map = mapping.build_map_from_gsheet_data(sheet_data)
             self._update_dest_combos()
-            messagebox.showinfo("Google Sheet Cargado", "Hoja de Google cargada y mapeada correctamente.")
+            messagebox.showinfo("Google Sheet Cargado", "Hoja de Google cargada y mapeada.")
         except Exception as e:
             messagebox.showerror("Error al Cargar", f"No se pudo cargar o procesar la hoja de Google:\n{e}")
 
@@ -203,15 +199,19 @@ class MainApp(tk.Tk):
     def _on_trimestre_selected(self, event=None):
         trimestre_str = self.combo_trimestre.get()
         if not trimestre_str: return
+        logging.info(f"Usuario ha seleccionado el trimestre: '{trimestre_str}'")
         trimestre_info = next((t for t in self.trimester_data_map if t['trimestre_name'] == trimestre_str), None)
         if trimestre_info and trimestre_info['tasks']:
             task_names = sorted(list(trimestre_info['tasks'].keys()))
+            logging.info(f"Tareas encontradas para este trimestre: {task_names}")
             self.combo_excel_tareas['values'] = task_names
             self.combo_excel_tareas.set(task_names[0])
             self.combo_excel_tareas.config(state="readonly")
         else:
+            logging.warning(f"No se encontraron tareas para el trimestre '{trimestre_str}'.")
             self.combo_excel_tareas.set('')
             self.combo_excel_tareas.config(state="disabled")
+        self._check_if_ready_to_write()
 
     def _execute_full_write(self):
         dest_config = {
@@ -248,7 +248,3 @@ class MainApp(tk.Tk):
             self.btn_escribir.config(state="normal")
         else:
             self.btn_escribir.config(state="disabled")
-
-    def _on_task_selected(self, event=None):
-        # Esta función ahora solo sirve para chequear si el botón debe activarse
-        self._check_if_ready_to_write()

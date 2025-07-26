@@ -56,9 +56,18 @@ def get_sheets_service():
         logging.error("Error al inicializar el servicio de Google Sheets: %s", e)
         raise
 
+# En evaluator/clients.py
+
 def get_gsheet_values(spreadsheet_id, range_name):
+    """
+    Función para LEER datos de un rango específico de una hoja.
+    Se ha ampliado el rango de lectura para asegurar que se leen todos los trimestres.
+    """
+    # --- CORRECCIÓN: Ampliar el rango de lectura hasta la columna AZ ---
+    full_range = f"{range_name.split('!')[0]}!A1:AZ100"
     service = get_sheets_service()
-    result = service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=range_name).execute()
+    result = service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=full_range).execute()
+    logging.info(f"Se han leído datos del rango ampliado '{full_range}'.")
     return result.get('values', [])
 
 def update_gsheet_values(spreadsheet_id, range_name, values):
